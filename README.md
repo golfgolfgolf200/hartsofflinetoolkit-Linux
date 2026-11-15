@@ -319,6 +319,48 @@ python3 cli.py interactive
 python3 cli.py status
 ```
 
+## Model Context Protocol (MCP) Server Integration
+
+HartsOfflineToolkit includes a hardened `stdio` MCP server
+(`mcp_server.py`, built on MCP Python SDK v2 `MCPServer`) that exposes
+your local offline vault directly to AI coding assistants and desktop
+clients while keeping `EmbeddingGemma 2` warm in RAM and enforcing
+`HF_HUB_OFFLINE=1`.
+
+### Exposed MCP Capabilities
+
+- `search_vault(query, limit, source_filter)`: Hybrid BM25 +
+  EmbeddingGemma 2 RRF search returning structured JSON chunks with
+  document IDs, page numbers, and scores.
+- `get_document_chunks(file_name, page, max_chunks)`: Sequential chunk
+  reader for inspecting surrounding sections or full tables of a matched
+  document.
+- `index_vault(path, rebuild)`: Incrementally indexes new or modified files
+  jailed strictly within `./data/raw` and can be disabled via
+  `MCP_READ_ONLY=1` in `.env`.
+- `vault_status()` and `vault://status`: Live telemetry for indexed
+  file/chunk counts, disk usage, CPU core affinity, and process RSS RAM.
+- `audit_vault_query` prompt: Built-in template enforcing strict citation
+  of `file_name`, `doc_id`, and `page` values.
+
+### Client Configuration (`mcp.json` / `claude_desktop_config.json`)
+
+Use absolute paths to your virtual environment's Python binary and
+`mcp_server.py`:
+
+```json
+{
+  "mcpServers": {
+    "hartsofflinetoolkit": {
+      "command": "/home/<username>/projects/hartsofflinetoolkit/.venv/bin/python3",
+      "args": [
+        "/home/<username>/projects/hartsofflinetoolkit/mcp_server.py"
+      ]
+    }
+  }
+}
+```
+
 ## Verifying Repository Integrity
 
 All source files, tests, and documentation include a tracked
