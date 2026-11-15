@@ -109,6 +109,27 @@ specific operational bottlenecks that make offline search impractical:
   home desktop while simultaneously gaming, compiling code, or streaming
   music and video.
 
+### 6. Agentic IDE & AI Desktop Memory Layer (MCP Server)
+
+- Multi-Step Autonomous Research: Connect `mcp_server.py` to VS Code
+  Copilot, Claude Desktop, Cursor, or local MCP hosts so AI assistants can
+  search your private vault via `search_vault` and read surrounding context
+  with `get_document_chunks`, while `EmbeddingGemma 2` stays warm in RAM
+  for sub-50ms responses.
+- Locked-Down Compliance Kiosks: Deploy shared read-only reference
+  stations (`MCP_READ_ONLY=1`, root-jailed paths, and write-locked
+  weights) where operators or AI agents can query SOPs and regulations
+  without risking index tampering.
+
+### 7. Automated Shell Pipelines, Cron Jobs & CI/CD Audits
+
+- Incremental Delta Indexing: Schedule `cli.py index` via `cron` or
+  systemd timers to continuously index growing documentation folders.
+  SHA-256 tracking skips unchanged files in milliseconds and atomically
+  replaces modified ones.
+- Scriptable JSON & `jq` Integration: Pipe `cli.py search "..." --json`
+  directly into `jq`, `grep`, or shell pipelines for auditing and automation.
+
 ---
 
 ## Installation & Setup
