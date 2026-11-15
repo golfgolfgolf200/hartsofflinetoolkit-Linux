@@ -257,3 +257,74 @@ embeddings:
   url={https://arxiv.org/abs/2610.37364}
 }
 ```
+
+---
+
+## CLI Commands Reference
+
+- `python3 cli.py init`: One-time automated setup that creates
+  `data/raw` and `data/db`, downloads `google/embeddinggemma-2`, locks
+  model weights with `chmod a-w`, and writes `MODEL_PATH` into `.env`.
+- `python3 cli.py index --path ./data/raw`: Incrementally indexes only
+  new or modified files tracked via SHA-256 and purges removed files.
+  Pass `--rebuild` to wipe and rebuild from scratch.
+- `python3 cli.py search "query" --limit 5`: Executes a hybrid BM25 +
+  EmbeddingGemma 2 search. Pass `--json` for raw JSON output suitable for
+  `jq` or shell pipelines.
+- `python3 cli.py interactive`: Loads model weights into RAM once for
+  low-latency back-to-back searches.
+- `python3 cli.py status`: Displays vault file/chunk counts, disk usage,
+  CPU core affinity, and current RAM footprint.
+
+## What's New: Production & Security Upgrades
+
+- Incremental SHA-256 Indexing: Tracks cryptographic file hashes
+  (`file_sha256`) in LanceDB so subsequent `index` runs skip unchanged
+  files, atomically replace modified files, and remove orphaned records for
+  deleted files.
+- Table-Preserving Overlapping Chunking: Splits long prose sections into
+  overlapping windows (`CHUNK_WORDS=400`, `CHUNK_OVERLAP_WORDS=50`) so
+  large manuals are never truncated by model token limits while keeping
+  Markdown tables intact as indivisible blocks.
+- Vectorized CPU Batch Encoding: Encodes document chunks in bounded batches
+  (`EMBED_BATCH_SIZE=16`) under `torch.no_grad()` while honoring CPU core
+  affinity (`taskset`), `nice`, and `ionice` limits.
+- Interactive REPL & Scriptable JSON Output: Run
+  `python3 cli.py interactive` to keep model weights loaded in RAM for
+  rapid back-to-back searches, or pass `--json` to `search` for clean
+  `jq`/shell pipeline integration.
+- Hardened Ingestion & Query Guardrails: Enforces symlink rejection,
+  canonical root-path containment, per-file size caps (`MAX_FILE_BYTES`),
+  SQL-literal escaping on LanceDB delete predicates, read-only model weight
+  locking, and terminal markup escaping.
+
+```bash
+# 1. One-time automated setup (creates dirs, downloads weights,
+#    locks permissions)
+python3 cli.py init
+
+# 2. Incrementally index new or modified files
+#    (or pass --rebuild for a full rebuild)
+python3 cli.py index --path ./data/raw
+python3 cli.py index --path ./data/raw --rebuild
+
+# 3. Single-query hybrid search (table output or raw JSON)
+python3 cli.py search "REF-99482-TX" --limit 5
+python3 cli.py search "What fee applies to late wire transfers?" --json
+
+# 4. Zero-cold-start interactive search shell
+python3 cli.py interactive
+
+# 5. Inspect vault counts, disk footprint, CPU affinity, and RAM usage
+python3 cli.py status
+```
+
+## Verifying Repository Integrity
+
+All source files, tests, and documentation include a tracked
+`SHA256SUMS` manifest. After cloning, verify file integrity before
+execution:
+
+```bash
+sha256sum -c SHA256SUMS
+```
